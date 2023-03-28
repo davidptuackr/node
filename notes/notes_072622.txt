@@ -1,0 +1,215 @@
+프로토타입
+
+자바스크립트에서 기본 데이터 타입을 제외한 모든 것은 객체
+--> 함수까지
+
+객체 안에 __proto__ 라는 프로퍼티가 있고 이 프로퍼티를 만들어 낸 원형인 '프로토타입 객체'를 참조하는 숨겨진 링크를 프로토타입이라고 정의한다
+
+프로토타입은 상속을 가능하게 한다
+
+방법
+const animal = ...
+const dog, cat = ...
+dog.__proto__ = animal;
+cat.__proto__ = animal;
+
+prototype chaining 가능
+ex.
+const animal = ...
+const dog = ...
+const cat = ...
+dog.__proto__ = animal;
+cat.__proto__ = dog;
+
+
+
+콜백 함수
+
+콜백: 나중에 실행되는 코드. 어떤 함수의 모든 명령을 실행한 후 마지막으로 넘겨받은 인자 callback을 실행하는 메커니즘이 콜백 + 여기서 인자로 들어가는 함수를 콜백 함수라고 함
+자바스크립트에서 함수는 일급 객체
+
+setTimeout(콜백 함수, 지연 시간)
+콜백 함수와 지체할 시간을 인자로 받음
+인자로 받은 시간만큼 기다렸다가 콜백 함수를 실행하는 함수
+
+* 자바스크립트는 이벤트 중심 언어이기 때문에 어떤 이벤트가 발생하고 그에 대한 결과가 올 때까지 기다리지 않고 다음 이벤트를 계속 실행한다.
+
+
+setTimeout(cb1, t1);
+setTimeout(cb2, t2);
+--> 비동기적으로 실행 --> t1만큼 기디렸다 cb1 실행 후 t2만큼 기다렸다 cb2 실행 X --> 프로그램 시작 후 각각 t1, t2 경과 시 cb1, cb2 실행
+
+비동기 작업을 동기적으로 처리하는 방법
+1. setTimeout 중첩
+--> setTimeout( () => {
+	setTimeout( () => { cb2; }, t2 ); 
+	cb1;
+	}
+	, t1);
+
+*** fakecallback은 동기적으로 실행되는 이유는?
+
+인터프리터가 비동기 함수를 만나면 해당 작업을 콜 스택에서 지운다
+해당 비동기 함수는 web API로 넘어간다 (ex. setTimeout)
+web API에 있다가 타이머나 로드 등이 완료되면 콜백 큐로 보내진다
+이벤트 루프는 콜 스택과 콜백 큐 사이에서 콜 스택이 비었는지 확인한다
+모든 함수의 실행이 완료되고 콜 스택이 비워지면, 이벤트 루프는 콜백 큐에 담겨있는 함수들을 먼저 들어온 순서대로 콜 스택으로 넘겨준다
+
+아 그래서
+log 0 스택으로 --> 출력 --> 팝 --> 다음은 setTimeout --> 비동기 작업이므로 web API로 넘어감 ( --> ~초간 대기) --> setTimeout pop --> 다음은 log 1 --> 출력 --> 팝 -->  그 사이 ~초 지났으면 콜백 큐에 등록 --> 이벤트 루프가 지금 콜 스택이 비어있음을 확인 --> push --> 돌아왔을 때 할 작업 실행 --> 팝
+
+*** 내부에서 처리되는 연산이면 동기적으로 처리 (fakesto), 외부에서 처리되는 연산이면 비동기 처리 (setTimeout)
+외부에서 처리되는 연산: 서버에서 데이터 가져오기, 타이머 etc
+
+promise
+요청에 대해 응답이 준비되었을 때 알림을 주는 역할
+여기선 workP()의 요청이 성공하게 되는 경우 resolve 함수를 호출하고,
+실패할 경우 reject 함수 호출
+
+
+
+function work(sec, callback) {
+	setTimeout(
+		() => {callback(new Date().toISOString());}, // <-- 마지막줄에 있는 것 이거(new Date().toISOString()) 가지고 감
+ 		sec * 1000
+	);
+};
+
+work(1, (result) => {
+    console.log('첫번째 작업', result);
+});
+
+function workP(sec) {
+	return new Promise( 
+		(resolve, reject) => { 
+			setTimeout( 
+				() => { resolve(new Date().toISOString()); }, // 성공하면 1초 대기 후 resolve(new Date().toISOString())를 가지고 감
+				sec * 1000
+			);
+		 }
+	); 
+}
+
+workP(1).then( 
+	(result) => { // 성공했을 경우 resolve(즉, new Date().toISOString())를 result로
+		console.log('첫번째 작업', result); 
+		return workP(1); // 다음 then에서 실행할 값
+	}
+).then(
+	(result) => { console.log('두번째 작업', result); }
+);
+*** then: 
+
+
+
+async/await
+async: Promise 객체 반환
+lock을 걸 부분에 await 삽입
+
+function workP(sec) {
+    return new Promise((resolve, reject) => {
+        setTimeout(() => {
+            resolve('workP function');
+        }, sec * 1000);
+    });
+}
+
+async function asyncFunc() {
+    const result_workP = await workP(3); (2) // <-- 여기서 3초 대기, 다음줄로 안넘어감)
+    console.log(result_workP); (3, 2에서 3초 대기 후 넘어옴)
+    return 'async function';(4)
+}
+
+asyncFunc()(1).then((result) => {(5, 'async function'을 result로 사용)
+    console.log(result) (6, 'async function' 출력)
+});
+
+*** 만약에 (2) 를 비동기적으로 처리하려면? --> async function 먼저 출력하고 'workP function'은 나중에 출력하려면?
+(2, 3) 지우고 workP(3).then((result) => {console.log(result);})로 변경
+
+
+
+비동기 상황에서의 예외 처리
+try-catch로는 불가능 --> 예외 발생 시점과 try가 싸고 있는 시간이 일치하지 않기 때문
+
+방법 1. Promise의 .catch() 이용
+* chaining을 하기 위해선 앞 단계에서 그 앞에서 받은 예외를 다시 한번 throw해야 함. 안그러면 맨 처음의 예외를 받게 됨
+function wait(sec) {
+    return new Promise((resolve, reject) => {
+        setTimeout(() => {
+            reject('error!'); // --> 예외 발생 시 실행할 함수
+        }, sec * 1000);
+    });
+}
+
+방법 2. Promise의 .then() 이용 (*** then()의 매개변수는 2개: onFulfilled, onRejected)
+wait(3).then(
+	() => { console.log('Success'); },
+	(e) => { console.log('catch in then', e); }
+)
+--> wait을 성공적으로 실행하면 "success", 예외 발생 시 'catch in then 예외종류' 출력
+
+방법 3. async/await의 경우
+	1. Promise와 똑같이 하거나
+	2. await을 사용할 경우 try-catch 사용 가능 --> 실행 시점이 서로 같기 때문
+	ex.
+	try { // --> 진입
+        		await wait(2); // --> 2초 기다렸다 재개
+ 	...
+	*** 69쪽 내용 const result = await wait(2).catch(e => { console.error(2) } );
+	.catch는 reject만 잡고 resolve는 못잡음 --> wait(2)의 결과가 fulfilled(=resolved)라면 result 변수는 'undefined'가 됨
+	
+* 오타나 문법 오류로 인해 발생한 오류가 있으면서 Promise를 반환하는 함수는 .catch 사용
+
+2장 점검문제
+1. ?
+const MakeOrder = {
+	name: String,
+	price: int
+}
+정답
+function MakeOrder(name, price) {
+    this.name = name;
+    this.price = price;
+}
+
+2. 동기 방식
+3. 비동기 방식
+
+4.
+function work(sec) {
+	return new Promise( (resolve, reject) => {
+		setTimeout( () => { resolve(new Date().toISOString()); }, sec * 1000 );
+	});
+};
+
+work(1).then( (result) => {
+	console.log("첫번째 작업", result);
+	return work(1);
+	}
+).then( (result) => {
+	console.log("두번째 작업", result);
+	}
+)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

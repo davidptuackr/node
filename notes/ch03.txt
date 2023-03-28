@@ -1,0 +1,26 @@
+모듈을 내보내는 방법
+    1. exports
+        exports 객체의 멤버로 추가해 내보내는 방식
+        여러 개를 내보낼 수 있음
+    2. module.exports
+        단일 값만 할당 가능
+        module.exprots 객체에 할당된 값 자체를 require로 받음
+
+require의 인자로는 디렉토리도 가능. 이러면 하위 파일도 같이 딸려옴
+
+자바스크립트는 순환 참조 허용
+
+*** p86, 87 원인
+require 하는 시점에서 객체는 아직 exports 되지 않은 상태
+    A2의 경우
+        1. line 04에서  B2 require
+        2. B2로 넘어감
+        3. B2의 line 03에서 A2 require. 이 때는 A2에서 아무것도 exports 안된 시점
+        4. B2의 line 06 실행 결과 [object ... ~~ ] in B2.js 와 같이 출력
+        5. B2의 line 08에서 const B export
+        6. A2의 line 06 실행 결과는 정상적으로 출력
+        7. A2의 line 08 도달. 이 때가 되어서야 A2에서 export한 내용 발생 (const A)
+
+REST
+    요청을 보낼 때, 주소를 통해 내용을 표시하는 것
+    뒤에 붙는 주소 (ex. www.aaa.com이 기본 주소, 그 뒤에 /login, /post와 같은 것들)에 따라 요청을 정의할 수 있도록 주소체계를 구조화하여 만든 웹 서버를 RESTful 하다고 함
