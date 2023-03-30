@@ -1,3 +1,18 @@
+node 시작 전 해야할 것들
+    1. console >>> npm init: 초기화 + package.json 생성 (패키지 정보 관리)
+    2. 패키지명, entry point 입력 (entry point: 서버를 실행시킬 파일)
+    3. .vscode/launch.json >>> add configuration >>> Node.js: Launch Program 선택
+    4. 생성된 configurations에서 program >>> "${workspaceFolder}/${file}" 로 설정
+
+    *** .vscode 없을 때: settings.json 열기 >>> ctrl+  shift + p >>> preferences: open workspace settings (json)
+    *** launch.json 없을 때: 좌측 디버깅 창 >>> 드롭 다운 메뉴 >>> Add Debug Configuration
+
+모듈 종류
+    기본(코어) 모듈, 확장 모듈: 기본 포함 사항이면 기본 모듈, 아니면 확장 모듈
+    일반 모듈, 네이티브 모듈: 자바스크립트로 작성했으면 일반 모듈, 다른 언어면 네이티브
+    지역 / 전역 모듈: 현재 웹을 사용하기 위해서만 만들었으면 지역 모듈, 어디서든 사용할 수 있게 했다면 전역 모듈
+    서드 파티 모듈: npm install로 설치한 모듈. aka 확장 모듈
+
 모듈을 내보내는 방법
     1. exports
         exports 객체의 멤버로 추가해 내보내는 방식
@@ -24,3 +39,64 @@ require 하는 시점에서 객체는 아직 exports 되지 않은 상태
 REST
     요청을 보낼 때, 주소를 통해 내용을 표시하는 것
     뒤에 붙는 주소 (ex. www.aaa.com이 기본 주소, 그 뒤에 /login, /post와 같은 것들)에 따라 요청을 정의할 수 있도록 주소체계를 구조화하여 만든 웹 서버를 RESTful 하다고 함
+
+
+
+req, res
+    req: request; 요청에 관한 정보를 담은 객체
+    res: response; req에 대한 응답 내용을 담은 객체
+
+res.writeHead( 요청 코드, { 헤더 항목 이름: 값 } )
+    응답에 대한 헤더의 내용 기록
+    ex. res.writeHead(404, { 'AAA': 999 }) >>> 페이지가 없을 경우에 보내는 헤더에서 'AAA' 항목을 999로 설정
+
+res.write( ... )
+    클라이언트에 보낼 데이터
+    즉, 응답 결과 페이지에 표시할 내용
+    ex. res.write('<p>toxic</p>') >>> 화면에 'toxic' 표시
+
+res.end( ... )
+    응답 종료 + 맨 마지막에 전달할 데이터
+    ex. ... res.end('<p>END OF PAGE</p>') 화면에 'END OF PAGE'까지 표시 + 응답 종료
+
+서버.listen( 포트 번호, 콜백 )
+    포트 번호와 서버가 연결됐을 경우 지정한 콜백 함수 실행
+    ex.http.createServer( ... ).listen(8080, () => { console.log('CONNECTED') } ) >>> 8080 포트로 연결되면 콘솔에 'CONNECTED' 출력
+    
+서버.on('이벤트 이름', 콜백)
+    이벤트 발생 시 실행할 콜백 지정
+    ex. on('error', () => { console.log('ERROR OCCURED'); }); >>> 에러 발생 시 콘솔에 'ERROR OCCURED' 출력
+
+*** 오류에 응답할 때에도 서버측에서 실행할 콜백을 만들어놔야 한다 (~ p.96 3-7 line 15-17)
+
+
+
+p.97 3-9 해석
+6: 클라이언트 측에 응답으로 제공할 내용 읽어오기. 다 읽어와야 하기 때문에 콜백에 async, 파일 읽기 부분에 await fs.read...와 같이 작성
+7 ~ 8: 잘 읽어왔으면 이 부분 실행 >>> 헤더 작성 + end로 읽어온 파일 내용 전송
+9 ~ 12: 6 ~ 8 실행 중 오류 발생 시 오류 출력 + 오류 관련 사항을 헤더에 작성 + 오류 메시지 전달과 함께 응답 종료
+
+
+
+node_modules: express 설치 시 같이 오는 모듈들
+
+express 모듈 내 기능
+    .set('키', 값)
+        특정 요소를 지정한 값으로 설정
+        ex. .set('port', 8080) >>> 포트 번호를 8080으로 설정
+    
+    .get('주소', 라우터)
+        주소 요청 시 지정한 라우터로 응답
+        ex. .get('abc/login', (req, res) => { res.sendFile(__dirname + '/login.html') } )
+            >>> 주소 'abc/login'에 대한 응답으로 현재 위치의 login.html 파일 전송
+    
+    .res.sendFile( '파일 이름' );
+        지정한 위치의 파일 전송 + 헤더 내용과 같은 정보들도 알아서 설정
+    
+    .get('키')
+        주어진 키에 해당하는 값 획득
+    
+    .listen( 포트, 콜백 )
+        포트 연결 + 서버 실행 + 포트-서버 연결 성공 시 실행할 콜백
+    
+    
