@@ -3,13 +3,15 @@ const app = express();
 
 app.get(
     '/', 
-    function (req, res) {
-        res.send('hello world!');
+    function (req, res, next) {
+        res.send('HELLOOOO!');
+        next();
     }
 );
 
-const logger = function (req, res) {
+const logger = function (req, res, next) {
     console.log('LOGGED');
+    next();
 };
 
 app.use(logger);
