@@ -1,0 +1,29 @@
+01
+
+흐름 예상
+const a = require('./exec_03_a');
+const b = require('./exec_03_b');
+
+a.call();
+b.call();
+
+a 읽어오기
+    a 진입
+    a에서 b require >>> b로 흐름 이동
+        b 읽기 시작
+        b에서 a require >>> 뺑뺑이 돌면 안되기 때문에 const a는 빈 껍데기
+        b에서 함수 call exprot: 읽어온 a 내용을 출력하는 함수 >>> 껍데기만 있기 때문에 {} 출력
+        b 읽기 종료, a로 흐름 복귀
+    a의 const b에는 b가 내보낸 내용 { b.call() } 저장
+    a에서도 export
+a 읽어오기 종료
+b 읽어오기
+    b 진입
+    b에서 a require >>> a로 흐름 이동
+        a 읽기 시작
+        a의 b엔 아까 b가 exports 했던 함수 저장
+        a exports, a가 내보낸 것은 b가 exports한 내용들을 출력하는 함수
+    b 복귀
+b 읽어오기 종료
+    
+
