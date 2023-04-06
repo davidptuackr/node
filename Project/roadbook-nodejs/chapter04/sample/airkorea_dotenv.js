@@ -1,3 +1,7 @@
+const path = require('path');
+const dotenv = require('dotenv');
+dotenv.config({path: path.resolve(__dirname, '../../.env')})
+
 const morgan = require('morgan');
 const request = require('request');
 const express = require('express');
@@ -13,7 +17,7 @@ app.use(express.urlencoded({extended: true}));
 app.get(
     '/airkorea', 
     async (req, res) => {
-        const service_key = 'pDJ%2FJjMvahnPSBn%2B9vywu27j70ssfxj%2FU8dMdCgfseVwWEO3Ye3pAjzql9hFDk15NRNn2QOH3IUsCDtX0Mpnqw%3D%3D';
+        const service_key = process.env.airServiceKey;
         const air_url = 'http://apis.data.go.kr/B552584/ArpltnInforInqireSvc/getMsrstnAcctoRltmMesureDnsty?';
 
         let params = encodeURI('serviceKey') + '=' + service_key;
