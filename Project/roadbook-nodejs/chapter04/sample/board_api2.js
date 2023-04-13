@@ -10,8 +10,8 @@ app.use(express.json());
 app.use(express.urlencoded({extended: true}));
 
 const key = {
-    apiKey: 'J31BXR0-EECMZNF-N8D7T8M-DXYVKE2', 
-    uuid: '90c2bee0-7399-4fd5-aa1a-7d226f7db9b8'
+    apiKey: 'QM9TN9F-K074G3R-QJBR5EH-QMGG185',
+    uuid: 'bd13aaa5-980e-480f-bc97-82babd2100a0'
 }
 
 let board_list = [];
@@ -88,12 +88,12 @@ app.delete(
 app.get(
     '/board/:apikey/:type', 
     (req, res) => {
-        let { type, apiKey } = req.params;
+        let { type, apikey } = req.params;
         const query_data = url.parse(req.url, true).query;
 
-        if (uuidAPIkey.isAPIKey(apiKey) && uuidAPIkey.check(apikey, key.uuid)) {
+        if (uuidAPIkey.isAPIKey(apikey) && uuidAPIkey.check(apikey, key.uuid)) {
             if (type === 'search') {
-                const keyword = queryData.keyword;
+                const keyword = query_data.keyword;
                 const result = board_list.filter( (e) => { return e.title.includes(keyword); });
                 res.send(result);
             }
