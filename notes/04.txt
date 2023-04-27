@@ -1,1 +1,202 @@
+API?
+    서로 다른 응용 프로그램 사이의 인터페이스
+    ~ 응용 프로그램 사이의 소통 방법
+
+request를 이용한 API 활용 예시: 네이버 검색 API
+
+express객체.get(
+    '라우팅 경로', 
+    (req, res) => { // req: request 객체, res: response 객체 >>> req != request 모듈
+        const 클라이언트 ID = 발급받은 클라이언트 ID
+        const 클라이언트 시크릿 = 발급받은 secret
+        const API URL = 'API 경로'
+        const option = { }
+        const options = {
+            url: API URL,
+            qs: option,
+            headers: {
+                'X-Naver-Client-Id': 클라이언트 ID,
+                'X-Naver-Client-Secret': 클라이언트 시크릿
+            }
+        }
+        
+        request.get(
+            options,
+            (error, response, body) => {
+                if (!error && response.statusCode == 200) { // 에러 없이 응답에 성공했다면
+                    let news_item = JSON.parse(body).items // 응답 내용으로 보낸 뉴스 내용(body)을 파싱해서 담아둔다
+                }
+                const news_json = { 
+                    title: [ ],
+                    link: [ ],
+                    desc: [ ],
+                    date: [ ]
+                }
+                for (let i = 0; i < news_item.length; i++) {
+                    news_json의 각 힝목에 news_item[i].항목 추가
+                    ex. 뉴스 개시 일자 추가: news_json.title.push(news_item[i].pubDate);
+                }
+                res.json(news_json); // news_json을 .json으로 변경하여 응답 결과 표시
+            } else {
+                에러 내용 출력
+            }
+        ...
+
+express 객체.listen(포트 번호, 콜백)
+
+*** 네이버 API 요청 변수 정보
+    query
+        검색을 원하는 문자열로 UTF-8 인코딩
+        String type, 지정 필수, 기본값 없음
+        ex. ...query=coffee >>> 'coffee' 검색 결과
+    display: 검색 결과 수 >>> ~개 표시
+    start: 검색 시작 위치
+    sort: if sim, 유사도 순으로 정렬, if date, 날짜순 정렬
+
+
+
+*** request 모듈의 한계
+    - deprecated 됨 >>> 업데이트 없음
+    - 비동기 처리 필요
+
+
+
+axios
+
+axios 주요 특징
+    Promise 반환
+    async/await 사용 가능
+
+axios가 요청을 보내는 형태
+    1. axios(url, [, config])
+        url과 config를 넣어 GET 요청 전송 (config는 optional)
+
+    2. axios(config)
+        요청 관련 정보를 속성만 있는 객체에 담아 요청 전송. 
+        여기서의 config는 필수
+        config는 { 옵션 이름: 값 } 형태의 객체로 전달할 것
+        ex. EDGAR API + 'data/cik=123'을 GET 요청하고자 할 경우
+            axios( 
+                {
+                    method: 'get',
+                    url: 'data/cik=123',
+                    기타 옵션 ...
+                }
+            )
+    3. axios.요청방식(url[, data[, config]]) 형식의 메소드 ( [ ] 안은 optional)
+        GET 요청: axios.get(url[, config])
+        DELETE 요청: axios.delete(url[, config])
+        ...
     
+axios 활용 예시: 공공데이터
+...
+app.get(
+    '/airkorea',
+    async (req, res) => {
+        서비스 키
+        url = encodeURI('API 경로') + 파라미터들
+
+        try {
+            result = await axios.get(url)
+            res.json(result.data)
+        } catch ...
+...
+코드 상세
+    async (req, res) => { ... try { const result = await axios.get(url) ... }
+        axios.get(url)로 요청한 결과를 다 받아올 때까지 기다리기 위해 async, await 사용
+        안그러면 결과가 오기도 전에 다음 문장 (res.json(result.data)) 실행 >>> 아무것도 안나옴
+    
+    res.json(result.data);
+        result의 data 부분을 json 형태로 응답
+
+
+
+axios 활용 에시 2: 위 코드에서 try - catch 블록만 살짝 바꿔서 원하는 결과만 표시하기
+    *** 교재 내용은 예전 내용. 바뀐 형태는 result.data.response.body.items[0]에 필요한 내용들이 들어가 있고 items[0]['필요한 내용'] 형식으로 골라낸다
+    *** 문자열 중간에 특정 값을 삽입하려면 
+        1. ` ... ` 로 감쌀 것 (esc 아래 키)
+        2. 삽입할 위치에 ${...} 형태로 문자열에 넣을 것
+    
+try {
+    const result = await axios.get(url);
+    const items = {
+        'location': 'MAPO', // 응답 결과에 지역 정보는 빠져있다
+        'time': result.data.response.body.items[0]['dataTime'],
+        'pm10': result.data.response.body.items[0]['pm10Value'],
+        'pm25': result.data.response.body.items[0]['pm25Value']
+    }
+    res.send(
+        `
+            LOCATION: ${items.location}<br>
+            TIME: ${items.time}<br>
+            PM10: ${items.pm10}<br>
+            PM2.5: ${items.pm25}
+        `
+    )
+}
+
+
+
+dotenv
+    보안성 향상을 위한 방법 중 하나는 api key 같은 정보를 .env 파일에 별도 저장해 활용하는 것이 있다
+    dotenv는 .env 내에 ( 키 = 값 )형태로 작성한 내용을 process.env에 추가해주는 모듈이다
+    .env를 가져오려면 파일 경로 처리도 필요하기 때문에 'path' 모듈과 같이 활용한다
+
+    활용방법
+        1. dotenv, path require
+        2. dotenv.config( { path: path.resolve( .env 디렉토리 ) } )
+        3. 값을 쓰려면 process.env.키 형태로 불러오면 된다 (ex. api 사용자 키 값의 키를 apikey로 햇다면: process.env.apikey)
+
+
+
+캐싱
+    사용 목적: 매 요청마다 API를 이용하고 결과를 가공하는 것은 불필요하기 때문에 
+
+redis
+    키-값 형태로 저장하는 nosql 
+    저장: set key value
+    특정 키의 값 읽어오기: get key
+
+js X redis
+    1. redis 모듈 require
+    2. redis 연결 지정: const client = redis.createClient(포트 번호, '서버')
+        (지금은 기본 값으로 설정: (6379, '127.0.0.1'))
+    3. 연결 생성
+            async ... await client.connect()
+    4. 값 가져오기
+        async function ...(가져올 값의 키) {
+            await client.IRange(key, 시작위치, 종료위치);
+            ...
+        }
+    5. 값 넣기
+        client.connect() 완료 후 client.rpush('키', '값') (숫자도 문자열 형태로 전달)
+        
+3, 4는 await 처리한 부분이 끝나기 전에 다른 곳으로 넘어가면 안되기 때문에 비동기 처리 필요 >>> async
+5는 넘기면 redis에서 알아서 처리할 것이고, 넣는건 굳이 비동기 처리할 필요가 없으므로 그냥 작성
+IRange의 종료 위치가 -1이면 끝까지 읽어옴
+
+redisv4 코드 분석
+
+await client.connect(); : redis 접속
+const cachedItems = await client.lRange('airItems', 0, -1); : redis에서 키가 'airItems'인 데이터 읽어오기. 다 읽기 전까지 대기
+
+if (cachedItems.length)
+    redis에 'airItems'가 있다면 0이 아니라 true이므로 저장된 데이터로 res.send
+    아니면 false이므로 else 블록 실행
+
+try { ... }
+    redis에 airItems로 들어갈 데이터 구성
+    가공한 데이터를 airItems.forEach((val) => {client.rPush('airItems', val)}에서 실제 redis에 삽입
+    client.expire('airItems', 60*60)은 1시간 후 'airItems')를 redis에서 없애기 위한 것 (최신화하기 위해)
+    마지막엔 읽어온 데이터를 출력할 수 있도록 새로고침 유도
+
+
+
+
+
+
+
+
+
+
+
