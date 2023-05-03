@@ -138,26 +138,28 @@ try {
 
 
 dotenv
-    보안성 향상을 위한 방법 중 하나는 api key 같은 정보를 .env 파일에 별도 저장해 활용하는 것이 있다
-    dotenv는 .env 내에 ( 키 = 값 )형태로 작성한 내용을 process.env에 추가해주는 모듈이다
-    .env를 가져오려면 파일 경로 처리도 필요하기 때문에 'path' 모듈과 같이 활용한다
+    보안성 향상을 위해 사용하는 모듈
+    .env 파일 내에 ( 키 = 값 ) 형태로 작성한 api key같은 내용을 process.env에 추가하는 역할을 한다
+    여기서 .env를 가져오려면 파일 경로 처리도 필요하기 때문에 'path' 모듈과 같이 활용한다
 
     활용방법
         1. dotenv, path require
         2. dotenv.config( { path: path.resolve( .env 디렉토리 ) } )
-        3. 값을 쓰려면 process.env.키 형태로 불러오면 된다 (ex. api 사용자 키 값의 키를 apikey로 햇다면: process.env.apikey)
+        3. 이후엔 .env 안에 있는 값을 쓰려면 process.env.키 형태로 불러오면 된다 
+            (ex. api_key = 발급한 API 키 와 같이 저장했다면 >>> process.env.apikey)
 
 
 
 캐싱
-    사용 목적: 매 요청마다 API를 이용하고 결과를 가공하는 것은 불필요하기 때문에 
+    결과물을 어디에 당분간 보관했다 요청이 들어올 때 이를 제공해주는 것
+    똑같은 요청을 매번 해석 + 가공하면 자원 낭비이므로 효율 증대를 위해 사용
 
 redis
     키-값 형태로 저장하는 nosql 
     저장: set key value
     특정 키의 값 읽어오기: get key
 
-js X redis
+js X redis 과정
     1. redis 모듈 require
     2. redis 연결 지정: const client = redis.createClient(포트 번호, '서버')
         (지금은 기본 값으로 설정: (6379, '127.0.0.1'))
@@ -166,14 +168,18 @@ js X redis
     4. 값 가져오기
         async function ...(가져올 값의 키) {
             await client.IRange(key, 시작위치, 종료위치);
-            ...
         }
     5. 값 넣기
         client.connect() 완료 후 client.rpush('키', '값') (숫자도 문자열 형태로 전달)
         
 3, 4는 await 처리한 부분이 끝나기 전에 다른 곳으로 넘어가면 안되기 때문에 비동기 처리 필요 >>> async
 5는 넘기면 redis에서 알아서 처리할 것이고, 넣는건 굳이 비동기 처리할 필요가 없으므로 그냥 작성
-IRange의 종료 위치가 -1이면 끝까지 읽어옴
+
+IRange?
+    값이 배열일 때 사용할 수 있는 함수
+    인자: (키, 시작, 종료) >>> 종료 위치가 -1이면 배열 끝까지 읽어옴
+
+
 
 redisv4 코드 분석
 
@@ -186,9 +192,101 @@ if (cachedItems.length)
 
 try { ... }
     redis에 airItems로 들어갈 데이터 구성
-    가공한 데이터를 airItems.forEach((val) => {client.rPush('airItems', val)}에서 실제 redis에 삽입
-    client.expire('airItems', 60*60)은 1시간 후 'airItems')를 redis에서 없애기 위한 것 (최신화하기 위해)
+    airItems.forEach((val) => {client.rPush('airItems', val)}: redis에 가공한 데이터 삽입이 이뤄진다
+    client.expire('airItems', 60*60): 1시간 후 'airItems'를 redis에서 없애기 위한 것 (최신화하기 위해)
     마지막엔 읽어온 데이터를 출력할 수 있도록 새로고침 유도
+
+
+
+REST: REpresentatinal State Transfer
+    - 요청된 주소만 보고도 어떤 내용에 관한 요청인지 예상할 수 있게 하는 형식
+    - 여기서 자원을 구조와 함께 나타내는 형태를 URI 라고 한다
+    - RESTful하게 API를 만들면 ( URI + http 요청 메소드 )를 보고 어떤 요청인지 파악할 수 있다
+
+*** 참고: URL? URI?, URN?
+    URI
+        식별자
+        이를 얻기 위해 '어떻게 가라' 까지는 없음. 즉 프로토콜까진 없음
+        ex. localhost:8080/airs, https://localhost:8080/airs 다 URI(두번째껀 추가로 '어떻게 가라' 까지 나와있는 형태. 즉 URL)
+    URL
+        식별자 + 접근 방법(=프로토콜) (URL ∈ URI)
+        ex. https://localhost:8080/airs
+    URN
+        상세 사항들 (~ 이미지 파일명, 문서 이름 ...)
+        ex. https://localhost:8080/airs/cloud.png에서 /cloud.png 부분
+
+*** 참고: http 요청 메소드
+    POST: 데이터 추가 (~create)
+    GET: 데이터를 읽거나 조회 (~read)
+    PUT: 데이터 변경 (~update)
+    PATCH: 일부만 변경 (put은 전부 변경)
+    DELETE: 데이터 삭제
+
+    POST로 보냈다고 꼭 데이터 추가와 관련된 요청은 아니다.
+    POST로 보냈어도 모든 기능에 대한 요청이 될 수도 있다. 
+    하지만 URI를 보고 어떤 작업을 해야 하는지 알 수가 없고, URI에 뭔가를 더 적어놓아야 좀 알 수가 있다
+    이런 것을 지양하기 위해 REST 규칙 중에 URI는 명사로 이뤄져야 한다는 것이 있다
+    결론은? 목적에 맞게 요청 메소드를 보내도록 한다
+
+
+
+REST 예시
+
+1. GET/ https://edgar/fillings/ 는 어떤 동작을 하도록 만들 수 있는가?
+    >>> fillings.html을 읽어온다
+
+2. GET/ https://edgar/filings?form=10k
+    >>> fillings.html에서 문서 형식이 10k인 데이터만 읽어온다?
+
+
+
+API 서버 만들기
+
+p.165 코드 분석
+app.get(
+    '/:type',
+    (req, res) => {
+        let {type} = req.params;
+        res.send(type);
+    }
+);
+    URI의 콜론 뒤에 오는 path(여기선 type)은 어떤 것이든 올 수 있다
+    그렇게 들어온 값은 req.params에 저장된다 >>> let {type} = ...
+    읽어온 req.params를 응답으로 보낸다
+    ex. (주소)/texas와 같이 들어온다면
+        req.params = texas
+        res.send는 texas 라는 문자열로 응답 >>> 화면에 texas 출력
+
+p.166 코드 분석
+    line 20 ~ 22
+        메소드: GET >>> 읽거나 조회
+        요청: '/' (기본 주소)
+        응답 결과: 'this is api.js' 출력
+
+    line 25 ~ 27
+        메소드: GET
+        요청: /board
+        응답 결과: 게시글 목록(boardList) 전송
+    
+    line 29 ~ 40
+        메소드: POST >>> 추가
+        요청 URI: /board
+        응답 결과
+            1. POST + /board >>> POST 메소드로 /board 요청 시 
+            2. 서버에서 만든 ID, req.body에 실어온 내용(user_id, title, content)로 객체 생성
+            3. 만든 객체를 서버의 boardList에 추가
+            4. /board로 리디렉션 >>> == GET /board
+        
+    line 42 ~ 62
+        메소드: PUT >>> 수정
+        요청 URI: /board/:id (/board/수정할 게시글 ID)
+        응답 결과
+            1. line 44 ~ 46: ID가 :id로 넘긴 값과 같은 게시글이 있는지 서버에서 탐색
+            2. line 48: 찾아낸 게시글의 인덱스를 const idx에 저장
+            3. line 49: 서버 게시글 목록에서 idx번 글을 하나만 삭제 (Array.splice(시작, ~개))
+            
+
+
 
 
 
