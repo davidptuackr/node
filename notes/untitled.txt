@@ -1,0 +1,56 @@
+CREATE SCHEMA roadbook default CHARACTER SET UTF8;
+use raodbook;
+show databases;
+
+CREATE TABLE customers (
+    id INT NOT NULL AUTO_INCREMENT,
+    name VARCHAR(20) NOT NULL,
+    age INT UNSIGNED NOT NULL,
+    sex VARCHAR(10) NOT NULL,
+    joined_date DATETIME NOT NULL DEFAULT now(),
+    PRIMARY KEY(id)
+);
+
+CREATE TABLE purchase (
+    id INT NOT NULL AUTO_INCREMENT,
+    customer_id INT NOT NULL,
+    book_name VARCHAR(20) NOT NULL,
+    purchase_date DATETIME NOT NULL DEFAULT now(),
+    PRIMARY KEY(id),
+    FOREIGN KEY(customer_id) REFERENCES customers(id) ON DELETE CASCADE
+);
+
+INSERT INTO customers(name, age, sex) VALUES('홍길동', 30, '남');
+INSERT INTO customers(name, age, sex) VALUES('이순진', 23, '여');
+INSERT INTO customers(name, age, sex) VALUES('박민철', 21, '남');
+INSERT INTO customers(name, age, sex) VALUES('이세라', 35, '여');
+INSERT INTO customers(name, age, sex) VALUES('김유미', 46, '여');
+
+INSERT INTO purchase(customer_id, book_name) VALUES(1, 'writing skills');
+INSERT INTO purchase(customer_id, book_name) VALUES(2, 'presentation skills');
+INSERT INTO purchase(customer_id, book_name) VALUES(3, 'presentation skills');
+INSERT INTO purchase(customer_id, book_name) VALUES(3, 'deep learning intro');
+INSERT INTO purchase(customer_id, book_name) VALUES(4, 'writing skills');
+
+DELETE FROM customers WHERE id = 1;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
