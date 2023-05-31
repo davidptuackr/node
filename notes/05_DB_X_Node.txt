@@ -1,0 +1,74 @@
+ORM(Object-Relational Mapping)
+    객체와 릴레이션을 매핑해주는 역할
+    ex. sequelize
+
+sequelize
+    사용 전
+        1. 작업할 프로젝트 폴더로 이동
+        2. 이동한 위치에서 npx sequelize init 명령 실행
+            결과
+                해당 위치에 config, migrations, models, seeders 폴더 생성
+                config: DB 연동 정보를 저장하는 폴더. 상세 내용은 config/config.json에 있다
+                migrations: 데이터베이스를 옮기거나 합치는 마이그레이션에 필요한 데이터가 저장되는 폴더
+                models: 데이터베이스 모델을 저장하는 폴더
+                seeders: 테스트에 필요한 데이터를 정의하는 폴더
+        
+    테이블 스키마 정의 방법
+        1. models 폴더에 js 파일을 생성한다
+        2. 생성한 js 파일 내용은 다음과 같이 한다
+        
+        module.exports = (sequelize, DataTypes) => {
+            const 스키마 = sequelize.define(
+                "테이블 이름",
+                {
+                    속성 1: { type: ... , allowNull: true / false, defaultValue: ... , 기타 옵션... },
+                    속성 2: { ... }
+                },
+                {
+                    freezeTableName: true / false
+                    timestamps: true / false
+                }
+            );
+            return 스키마;
+        }
+        
+        속성 옵션
+            type: dtype
+            allowNull: if true, alias NOT NULL
+            autoincrement: if true, alias AUTO INCREMENT option
+            defaultValue: 기본값. alias DEFAULT ...
+            comment: 열에 대한 설명
+            freezeTableName: false일 경우 "테이블 이름"을 단수로 지정했을 때 이를 복수형으로 변경 (ex. customer >>> customer's')
+            timestamps: createdAt, updatedAt 열을 추가할지 지정
+        
+        *** 기본 키 속성을 정의하지 않았을 경우
+            1. 알아서 'id'란 이름의 필드 생성
+            2. id는 자동으로  INTEGER, AUTO INCREMENT, NOT NULL로 설정
+        
+        *** 기본 키 속성 정의
+            기본키이름: { type: dtype은 알아서, allowNull: false, >>> primaryKey: true <<< }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
