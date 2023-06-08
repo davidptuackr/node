@@ -5,7 +5,7 @@ ORM(Object-Relational Mapping)
 sequelize
     사용 전
         1. 작업할 프로젝트 폴더로 이동
-        2. 이동한 위치에서 npx sequelize init 명령 실행
+        2. 이동한 위치에서 npx sequelize init 명령 실행 >>> 초기화 작업
             결과
                 해당 위치에 config, migrations, models, seeders 폴더 생성
                 config: DB 연동 정보를 저장하는 폴더. 상세 내용은 config/config.json에 있다
@@ -34,22 +34,59 @@ sequelize
         
         속성 옵션
             type: dtype
-            allowNull: if true, alias NOT NULL
-            autoincrement: if true, alias AUTO INCREMENT option
-            defaultValue: 기본값. alias DEFAULT ...
+            allowNull: nullable 설정
+            autoincrement: alias AUTO INCREMENT
+            defaultValue: 기본값 설정
             comment: 열에 대한 설명
-            freezeTableName: false일 경우 "테이블 이름"을 단수로 지정했을 때 이를 복수형으로 변경 (ex. customer >>> customer's')
+            freezeTableName: false일 경우 "테이블 이름" 부분을 단수로 지정했을 때 이를 복수형으로 변경 (ex. customer >>> customer's')
             timestamps: createdAt, updatedAt 열을 추가할지 지정
         
         *** 기본 키 속성을 정의하지 않았을 경우
-            1. 알아서 'id'란 이름의 필드 생성
-            2. id는 자동으로  INTEGER, AUTO INCREMENT, NOT NULL로 설정
+            1. sequelize가 알아서 'id'란 이름의 필드를 만든다
+            2. id를 INTEGER, primaryKey, autoincrement, allowNull을 설정한다
         
         *** 기본 키 속성 정의
-            기본키이름: { type: dtype은 알아서, allowNull: false, >>> primaryKey: true <<< }
+            기본키이름: { type: ... , allowNull: false, >>> primaryKey: true <<< }
+
+    sequelize 초기화: models/index.js 수정
+        스키마를 정의한 뒤, 다음과 같이 sequelize를 초기화한다
+
+const 모듈정보 = require('sequelize'); // 모듈 내 설정(~dtypes 정보) 사용 + Sequelize 클래스로 DB 연결 설정
+const 사용설정 = process.env.NODE_ENV || 'development'; 
+const 설정상세 = require(__dirname + '/../config/config.json')[사용설정];
+const 초기화정보 = {};
+
+let 연결설정; // sequelize.Sequelize(dbms, username, pw, 기타설정) >>> ~ JDBC, DB와의 연동을 위한 클래스
+
+if (설정상세.use_env_variable) { // 시스템에서 정한 설정을 사용한다면
+    연결설정 = new 모듈정보.Sequelize(process.env[설정상세.use_env_variable], 설정상세);
+} else { // config.json의 설정을 쓰기로 했다면
+    연결설정 = new 모듈정보.Sequelize(설정상세.database, 설정상세.username, 설정상세.password, 설정상세);
+}
+
+초기화정보.sequelize = 연결설정;
+초기화정보.Sequelize = 모듈정보;
+
+초기화정보.새_스키마 = require('./구현할 스키마')(연결설정, 모듈정보); 
+
+module.exports = 초기화정보; export
 
 
 
+    실제 스키마 생성은 다음과 같이 한다
+const 초기화정보 = require('./models/my_index2.js');
+
+const driver = async () => {
+    try {
+        await 초기화정보.연결설정.sync(); // 실제 연결 생성: 상세 작업은 모듈 내부에 미리 설정해둔 대로 한다 (~JDBC 드라이버 매니저)
+        console.log("INIT COMPLEATE");
+    } catch (err) {
+        console.error("INIT FAILED");
+        console.error(err);
+    }
+}
+
+driver();
 
 
 
